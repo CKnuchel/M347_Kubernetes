@@ -170,7 +170,7 @@ metadata:
   name: mediawiki-service
   namespace: mediawiki
 spec:
-  type: NodePort # Richtiges Feld für NodePort
+  type: NodePort
   ports:
     - name: "8000"
       port: 8000
