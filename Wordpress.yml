@@ -1,0 +1,257 @@
+# Namespace erstellen
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: wordpress
+
+---
+
+# PersistentVolume für MySQL-Daten
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: wordpress-mysql-pv
+  namespace: wordpress
+spec:
+  capacity:
+    storage: 4Gi
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: manual
+  hostPath:
+    path: /tmp/mysql-data
+
+---
+
+# PersistentVolumeClaim für MySQL-Daten
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: wordpress-mysql-pv-claim
+  namespace: wordpress
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 4Gi
+  storageClassName: manual
+
+---
+
+# ConfigMap für Umgebungsvariablen
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: wordpress-env
+  namespace: wordpress
+data:
+  MYSQL_DATABASE: wordpressdatabase
+
+---
+
+# PersistentVolume für WordPress-Daten
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: wordpress-pv
+  namespace: wordpress
+spec:
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: manual
+  hostPath:
+    path: /tmp/wordpress-data
+
+---
+
+# PersistentVolumeClaim für WordPress-Daten
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: wordpress-pv-claim
+  namespace: wordpress
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: manual
+
+---
+
+# Secret für MySQL-Passwort
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mysql-secret
+  namespace: wordpress
+type: Opaque
+data:
+  mysql-root-password: UGFzc3cwcmQ=  # Base64-codiertes Passwort "Passw0rd"
+
+---
+
+# Deployment für MySQL
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql-deployment
+  namespace: wordpress
+  labels:
+    app: mysql
+    network/wordpressnetwork: "true"
+spec:
+  selector:
+    matchLabels:
+      app: mysql
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: mysql
+        network/wordpressnetwork: "true"
+    spec:
+      containers:
+      - image: mysql:8.0
+        name: mysql
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysql-secret
+              key: mysql-root-password
+        - name: MYSQL_DATABASE
+          valueFrom:
+            configMapKeyRef:
+              name: wordpress-env
+              key: MYSQL_DATABASE
+        ports:
+        - containerPort: 3306
+          name: mysql
+        resources:
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+        volumeMounts:
+        - name: mysql-persistent-storage
+          mountPath: /var/lib/mysql
+      volumes:
+      - name: mysql-persistent-storage
+        persistentVolumeClaim:
+          claimName: wordpress-mysql-pv-claim
+
+---
+
+# Service für MySQL
+apiVersion: v1
+kind: Service
+metadata:
+  name: wordpress-mysql
+  namespace: wordpress
+  labels:
+    service: wordpress-mysql
+spec:
+  ports:
+    - name: "33060"
+      port: 33060
+      targetPort: 3306
+  selector:
+    app: mysql
+  type: ClusterIP
+
+---
+
+# Deployment für WordPress
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wordpress-deployment
+  namespace: wordpress
+  labels:
+    app: wordpress
+    network/wordpressnetwork: "true"
+spec:
+  selector:
+    matchLabels:
+      app: wordpress
+  template:
+    metadata:
+      labels:
+        app: wordpress
+        network/wordpressnetwork: "true"
+    spec:
+      containers:
+      - image: wordpress:latest
+        name: wordpress
+        env:
+        - name: WORDPRESS_DB_HOST
+          value: wordpress-mysql.wordpress.svc.cluster.local:3306
+        - name: WORDPRESS_DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysql-secret
+              key: mysql-root-password
+        ports:
+        - containerPort: 80
+          name: wordpress
+        resources:
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+        volumeMounts:
+        - name: wordpress-persistent-storage
+          mountPath: /var/www/html
+      volumes:
+      - name: wordpress-persistent-storage
+        persistentVolumeClaim:
+          claimName: wordpress-pv-claim
+
+---
+
+# Service für WordPress
+apiVersion: v1
+kind: Service
+metadata:
+  name: wordpress-service
+  namespace: wordpress
+spec:
+  type: NodePort
+  ports:
+    - name: "http"
+      port: 80
+      targetPort: 80
+      nodePort: 30080
+  selector:
+    app: wordpress
+
+---
+
+# Netzwerkpolicy, damit die beiden Pods miteinander kommunizieren können
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: wordpressnetwork
+  namespace: wordpress
+spec:
+  podSelector:
+    matchLabels:
+      network/wordpressnetwork: "true"
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              network/wordpressnetwork: "true"
+      ports:
+        - protocol: TCP
+          port: 3306
