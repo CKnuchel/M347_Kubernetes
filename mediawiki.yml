@@ -1,0 +1,246 @@
+# Namespace erstellen, für das MediaWiki und die Datenbank
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: mediawiki
+
+---
+
+# PersistentVolume für MediaWiki-Daten
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: mediawiki-pv
+  namespace: mediawiki
+spec:
+  accessModes:
+    - ReadWriteOnce
+  capacity:
+    storage: 5Gi
+  storageClassName: manual
+  hostPath:
+    path: /tmp/mediawiki-data
+
+---
+
+# PersistentVolumeClaim für MediaWiki-Daten
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mediawiki-pv-claim
+  namespace: mediawiki
+spec:
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+
+---
+
+# PersistentVolume für SQL-Daten
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: mediawiki-sql-pv
+  namespace: mediawiki
+spec:
+  accessModes:
+    - ReadWriteOnce
+  capacity:
+    storage: 4Gi
+  storageClassName: manual
+  hostPath:
+    path: /tmp/mediawiki-sql
+
+---
+
+# PersistentVolumeClaim für SQL-Daten
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mediawiki-sql-pv-claim
+  namespace: mediawiki
+spec:
+  resources:
+    requests:
+      storage: 4Gi
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+
+---
+
+# ConfigMap für Umgebungsvariablen
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mediawiki-env
+  namespace: mediawiki
+data:
+  MYSQL_DATABASE: wikidatabase
+
+---
+
+# Secret für Datenbank
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mediawiki-mysql-secret
+  namespace: mediawiki
+type: Opaque
+data:
+  # Secrets müüsen base64 kodiert werden | echo -n 'Passw0rd' | base64
+  MYSQL_ROOT_PASSWORD: UGFzc3cwcmQ= #Passw0rd
+
+---
+
+# MySQL-Service
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    service: mediawiki-mysql
+  name: mediawiki-mysql
+  namespace: mediawiki
+spec:
+  ports:
+    - name: "33060"
+      port: 33060
+      targetPort: 3306
+  selector:
+    service: mediawiki-mysql
+  type: ClusterIP
+
+---
+
+# MySQL-Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    service: mediawiki-mysql
+  name: mediawiki-mysql
+  namespace: mediawiki
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      service: mediawiki-mysql
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        network/wikinetwork: "true"
+        service: mediawiki-mysql
+    spec:
+      containers:
+        - name: mediawiki-mysql
+          image: mysql:8.0
+          imagePullPolicy: Always
+          resources:
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
+          ports:
+            - containerPort: 3306
+          env:
+            - name: MYSQL_DATABASE
+              valueFrom:
+                configMapKeyRef:
+                  key: MYSQL_DATABASE
+                  name: mediawiki-env
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: MYSQL_ROOT_PASSWORD
+                  name: mediawiki-mysql-secret
+      restartPolicy: Always
+
+---
+
+# MediaWiki-Service
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    service: mediawiki
+  name: mediawiki-service
+  namespace: mediawiki
+spec:
+  type: NodePort # Richtiges Feld für NodePort
+  ports:
+    - name: "8000"
+      port: 8000
+      targetPort: 80
+  selector:
+    service: mediawiki
+
+
+---
+
+# MediaWiki-Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    service: mediawiki
+  name: mediawiki-deployment
+  namespace: mediawiki
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      service: mediawiki
+  template:
+    metadata:
+      labels:
+        network/wikinetwork: "true"
+        service: mediawiki
+    spec:
+      containers:
+        - name: mediawiki
+          image: mediawiki:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+          resources:
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
+          env:
+            - name: MEDIAWIKI_DB_HOST
+              value: mediawiki-mysql
+            - name: MEDIAWIKI_DB_NAME
+              valueFrom:
+                configMapKeyRef:
+                  key: MYSQL_DATABASE
+                  name: mediawiki-env
+            - name: MEDIAWIKI_DB_USER
+              value: root
+            - name: MEDIAWIKI_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: MYSQL_ROOT_PASSWORD
+                  name: mediawiki-mysql-secret
+      restartPolicy: Always
+
+---
+
+# Netzwerkpolicy, damit die beiden Pods miteinander kommunizieren können
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: wikinetwork
+  namespace: mediawiki
+spec:
+  podSelector:
+    matchLabels:
+      network/wikinetwork: "true"
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              network/wikinetwork: "true"
