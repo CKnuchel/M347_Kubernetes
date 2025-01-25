@@ -37,7 +37,7 @@ Das folgende Diagramm zeigt die Komponenten des Systems und deren Verbindungen:
 
 <br>
 
-![Systemübersicht](images/test.svg)
+![Systemübersicht](images/mediawiki_infra.svg)
 
 ---
 
@@ -137,6 +137,7 @@ metadata:
   namespace: mediawiki
 data:
   MYSQL_DATABASE: wikidatabase
+  MYSQL_USER: mediawiki
 ```
 
 #### Secrets
@@ -150,6 +151,7 @@ metadata:
 type: Opaque
 data:
   MYSQL_ROOT_PASSWORD: UGFzc3cwcmQ= #Passw0rd
+  MYSQL_USER_PASSWORD: UGFzc3cwcmQ= #Passw0rd
 ```
 
 #### Deployments
@@ -166,28 +168,39 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      service: mediawiki
+      app: mediawiki
   template:
     metadata:
       labels:
-        service: mediawiki
+        app: mediawiki
     spec:
       containers:
-      - name: mediawiki
-        image: mediawiki:latest
-        env:
-        - name: MEDIAWIKI_DB_HOST
-          value: mediawiki-mysql
-        - name: MEDIAWIKI_DB_NAME
-          valueFrom:
-            configMapKeyRef:
-              key: MYSQL_DATABASE
-              name: mediawiki-env
-        - name: MEDIAWIKI_DB_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              key: MYSQL_ROOT_PASSWORD
-              name: mediawiki-mysql-secret
+        - name: mediawiki
+          image: mediawiki:latest
+          ports:
+            - containerPort: 80
+          resources:
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
+          env:
+            - name: MEDIAWIKI_DB_HOST
+              value: mediawiki-mysql-svc
+            - name: MEDIAWIKI_DB_NAME
+              valueFrom:
+                configMapKeyRef:
+                  key: MYSQL_DATABASE
+                  name: mediawiki-env
+            - name: MEDIAWIKI_DB_USER
+              valueFrom:
+                configMapKeyRef:
+                  key: MYSQL_USER
+                  name: mediawiki-env
+            - name: MEDIAWIKI_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: MYSQL_USER_PASSWORD
+                  name: mediawiki-mysql-secret
 ```
 
 **MySQL Deployment:**
@@ -201,26 +214,42 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      service: mediawiki-mysql
+      app: mediawiki-mysql
   template:
     metadata:
       labels:
-        service: mediawiki-mysql
+        app: mediawiki-mysql
     spec:
       containers:
-      - name: mysql
-        image: mysql:8.0
-        env:
-        - name: MYSQL_DATABASE
-          valueFrom:
-            configMapKeyRef:
-              key: MYSQL_DATABASE
-              name: mediawiki-env
-        - name: MYSQL_ROOT_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              key: MYSQL_ROOT_PASSWORD
-              name: mediawiki-mysql-secret
+        - name: mediawiki-mysql
+          image: mysql:8.0
+          resources:
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
+          ports:
+            - containerPort: 3306
+          env:
+            - name: MYSQL_DATABASE
+              valueFrom:
+                configMapKeyRef:
+                  key: MYSQL_DATABASE
+                  name: mediawiki-env
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: MYSQL_ROOT_PASSWORD
+                  name: mediawiki-mysql-secret
+            - name: MYSQL_USER
+              valueFrom:
+                configMapKeyRef:
+                  key: MYSQL_USER
+                  name: mediawiki-env
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: MYSQL_USER_PASSWORD
+                  name: mediawiki-mysql-secret
 ```
 
 #### Services
@@ -231,15 +260,16 @@ Ermöglichen die Kommunikation zwischen den Pods und externem Zugriff:
 apiVersion: v1
 kind: Service
 metadata:
-  name: mediawiki-service
+  name: mediawiki-svc
   namespace: mediawiki
 spec:
   type: NodePort
   ports:
-    - port: 8000
+    - name: "8000"
+      port: 8000
       targetPort: 80
   selector:
-    service: mediawiki
+    app: mediawiki
 ```
 
 **MySQL Service:**
@@ -247,14 +277,39 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: mediawiki-mysql
+  name: mediawiki-mysql-svc
   namespace: mediawiki
 spec:
   ports:
-    - port: 33060
+    - name: "3306"
+      port: 3306
       targetPort: 3306
   selector:
-    service: mediawiki-mysql
+    app: mediawiki-mysql
+  type: ClusterIP
+```
+
+**NetworkPolicy:**
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-mediawiki-mysql
+  namespace: mediawiki
+spec:
+  podSelector:
+    matchLabels:
+      app: mediawiki
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: mediawiki-mysql
+      ports:
+        - protocol: TCP
+          port: 3306
 ```
 
 ---
@@ -290,16 +345,39 @@ spec:
    kubectl apply -f mediawiki.yml
    ```
 3. **Weboberfläche aufrufen:**
-   - Die Adresse `http://<Cluster-IP>:8000` im Browser öffnen.
-4. **Datenbank konfigurieren:**
-   - Host: `mediawiki-mysql.mediawiki.svc.cluster.local:33060`
-   - Benutzer: `root`
-   - Passwort: `Passw0rd`
-5. **`LocalSettings.php` kopieren:**
-   ```bash
-   kubectl cp LocalSettings.php mediawiki-deployment-<pod-id>:/var/www/html/LocalSettings.php
-   ```
+    - Über den Minikube Befehl, die IP-Adresse des Service ermitteln:
+    ```bash
+    minikube service list
+    ```
+    - Rufen Sie die URL anschliessend im Browser auf
+  
+4. **Mediawiki konfigurieren:**
+    - Folgen Sie den Anweisungen auf der Weboberfläche, um MediaWiki zu konfigurieren.
 
+    - Die Datenbank-Verbindungseinstellungen sind:
+      - **Datenbanktyp**: MySQL
+      - **Datenbankhost**: mediawiki-mysql-svc
+      - **Datenbankname**: wikidatabase
+      - **Datenbankbenutzer**: mediawiki
+      - **Datenbankpasswort**: Passw0rd
+
+    - Verwenden Sie auch diesen Nutzer, für den Zugriff auf das Webinterface.
+
+5. **Wiki erstellen:**
+    - Erstellen Sie ein neues Wiki in dem Sie dem Assistenten folgen.
+
+6. **LocalSettings.php übernehmen:**
+    - Am Ende des Installation Prozesses, wo Sie die `LocalSettings.php` Datei erhalten, laden Sie diese herunter und speichern Sie diese im Verzeichnis des MediaWiki.
+    - Führen Sie folgenden Befehl aus, um die Datei in das Volume zu kopieren:
+    ```bash
+    kubectl -n mediawiki cp LocalSettings.php mediawiki-deployment-<ID>:/var/www/html/LocalSettings.php
+    ```
+    - Ersetzen Sie `<ID>` durch die ID des MediaWiki Pods. Welche Sie mit `kubectl get pods -n mediawiki` ermitteln können.
+
+    - Starten Sie den MediaWiki Pod neu, um die Änderungen zu übernehmen:
+    ```bash
+    kubectl delete pod mediawiki-deployment-<ID> -n mediawiki
+    ```
 ---
 
 ## Hilfestellungen
