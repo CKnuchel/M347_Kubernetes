@@ -37,7 +37,7 @@ Das folgende Diagramm zeigt die Komponenten des Systems und deren Verbindungen:
 
 <br>
 
-![Systemübersicht](images/test.svg)
+![Systemübersicht](images/mediawiki_infra.svg)
 
 ---
 
