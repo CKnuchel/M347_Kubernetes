@@ -48,7 +48,22 @@ metadata:
   namespace: wordpress
 type: Opaque
 data:
-  password: password
+  MYSQL_ROOT_PASSWORD: UGFzc3cwcmQ= # Passw0rd
+  MYSQL_PASSWORD: UGFzc3cwcmQ= # Passw0rd
+```
+
+### ConfigMap für WordPress
+
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: wordpress-config
+  namespace: wordpress
+data:
+  MYSQL_DATABASE: wordpress
+  MYSQL_USER: wordpress
+  WORDPRESS_DB_HOST: wordpress-mysql-svc
 ```
 
 ### MySQL Komponenten
@@ -121,13 +136,35 @@ spec:
           valueFrom:
             secretKeyRef:
               name: mysql-pass
-              key: password
+              key: MYSQL_ROOT_PASSWORD
+        - name: MYSQL_DATABASE
+          valueFrom:
+            configMapKeyRef:
+              name: wordpress-config
+              key: MYSQL_DATABASE
+        - name: MYSQL_USER
+          valueFrom:
+            configMapKeyRef:
+              name: wordpress-config
+              key: MYSQL_USER
+        - name: MYSQL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysql-pass
+              key: MYSQL_PASSWORD
         ports:
         - containerPort: 3306
           name: mysql
         volumeMounts:
         - name: mysql-persistent-storage
           mountPath: /var/lib/mysql
+        resources:
+          requests:
+            memory: "500Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
       volumes:
       - name: mysql-persistent-storage
         persistentVolumeClaim:
@@ -197,22 +234,44 @@ spec:
         tier: frontend
     spec:
       containers:
-      - image: wordpress:4.8-apache
+      - image: wordpress:latest
         name: wordpress
         env:
         - name: WORDPRESS_DB_HOST
-          value: wordpress-mysql-svc
+          valueFrom:
+            configMapKeyRef:
+              name: wordpress-config
+              key: WORDPRESS_DB_HOST
+        - name: WORDPRESS_DB_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: wordpress-config
+              key: MYSQL_DATABASE
+        - name: WORDPRESS_DB_USER
+          valueFrom:
+            configMapKeyRef:
+              name: wordpress-config
+              key: MYSQL_USER
         - name: WORDPRESS_DB_PASSWORD
           valueFrom:
             secretKeyRef:
               name: mysql-pass
-              key: password
+              key: MYSQL_PASSWORD
+        - name: WORDPRESS_TABLE_PREFIX
+          value: wp_
         ports:
         - containerPort: 80
           name: wordpress
         volumeMounts:
         - name: wordpress-persistent-storage
           mountPath: /var/www/html
+        resources:
+          requests:
+            memory: "500Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
       volumes:
       - name: wordpress-persistent-storage
         persistentVolumeClaim:
