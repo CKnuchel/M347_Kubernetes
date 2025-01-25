@@ -18,8 +18,6 @@ WordPress ist ein freies Content Management System (CMS), das zur Erstellung und
 
 ## Anforderungen
 
-- Einen Service, der eine MySQL Datenbank bereitstellt.
-- Einen Service, der WordPress bereitstellt.
 - Installation Hands-off: Das System soll weitgehend automatisch konfiguriert und installiert werden können. 
 - Komponenten: Bereitstellung von Wordpress und einer MySQL Datenbank.
 
