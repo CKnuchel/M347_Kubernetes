@@ -34,6 +34,7 @@ Die Infrastruktur unseres Systems umfasst folgende Komponenten:
 
 Das folgende Diagramm visualisiert die Verbindungen:
 
+![Diagramm](./images/Wordpress_Infrastruktur.svg)
 
 ## Konfiguration
 
