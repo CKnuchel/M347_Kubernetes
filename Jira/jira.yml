@@ -80,7 +80,7 @@ data:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: jira
+  name: jira-deployment
   namespace: jira
 spec:
   replicas: 1
@@ -127,7 +127,7 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: jira-db
+  name: jira-db-deployment
   namespace: jira
 spec:
   replicas: 1
@@ -179,7 +179,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: jira
+  name: jira-svc
   namespace: jira
 spec:
   type: NodePort
@@ -194,7 +194,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: jira-db
+  name: jira-db-svc
   namespace: jira
 spec:
   selector:
