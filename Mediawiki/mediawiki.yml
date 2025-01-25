@@ -23,22 +23,6 @@ spec:
 
 ---
 
-# PersistentVolumeClaim für MediaWiki-Daten
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: mediawiki-pv-claim
-  namespace: mediawiki
-spec:
-  resources:
-    requests:
-      storage: 5Gi
-  storageClassName: manual
-  accessModes:
-    - ReadWriteOnce
-
----
-
 # PersistentVolume für SQL-Daten
 apiVersion: v1
 kind: PersistentVolume
@@ -53,6 +37,22 @@ spec:
   storageClassName: manual
   hostPath:
     path: /tmp/mediawiki-sql
+
+---
+
+# PersistentVolumeClaim für MediaWiki-Daten
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mediawiki-pv-claim
+  namespace: mediawiki
+spec:
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
 
 ---
 
@@ -94,23 +94,6 @@ type: Opaque
 data:
   MYSQL_ROOT_PASSWORD: UGFzc3cwcmQ= #Passw0rd
   MYSQL_USER_PASSWORD: UGFzc3cwcmQ= #Passw0rd
-
----
-
-# MySQL-Service
-apiVersion: v1
-kind: Service
-metadata:
-  name: mediawiki-mysql-svc
-  namespace: mediawiki
-spec:
-  ports:
-    - name: "3306"
-      port: 3306
-      targetPort: 3306
-  selector:
-    app: mediawiki-mysql
-  type: ClusterIP
 
 ---
 
@@ -163,23 +146,6 @@ spec:
 
 ---
 
-# MediaWiki-Service
-apiVersion: v1
-kind: Service
-metadata:
-  name: mediawiki-svc
-  namespace: mediawiki
-spec:
-  type: NodePort
-  ports:
-    - name: "8000"
-      port: 8000
-      targetPort: 80
-  selector:
-    app: mediawiki
-
----
-
 # MediaWiki-Deployment
 apiVersion: apps/v1
 kind: Deployment
@@ -223,6 +189,40 @@ spec:
                 secretKeyRef:
                   key: MYSQL_USER_PASSWORD
                   name: mediawiki-mysql-secret
+
+---
+
+# MySQL-Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: mediawiki-mysql-svc
+  namespace: mediawiki
+spec:
+  ports:
+    - name: "3306"
+      port: 3306
+      targetPort: 3306
+  selector:
+    app: mediawiki-mysql
+  type: ClusterIP
+
+---
+
+# MediaWiki-Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: mediawiki-svc
+  namespace: mediawiki
+spec:
+  type: NodePort
+  ports:
+    - name: "8000"
+      port: 8000
+      targetPort: 80
+  selector:
+    app: mediawiki
 
 ---
 
