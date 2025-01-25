@@ -23,7 +23,8 @@ Dieses Projekt stellt eine Dokumentation für die Verwendung von Kubernetes bere
     - [Docker starten](#docker-starten)
     - [Minikube starten](#minikube-starten)
     - [Minikube Dashboard](#minikube-dashboard)
-  - [Herunterladen der Beispielanwendungen](#herunterladen-der-beispielanwendungen)
+  - [Sicherheit](#sicherheit)
+  - [Herunterladen und Starten der Beispielanwendungen](#herunterladen-und-starten-der-beispielanwendungen)
     - [Klonen des Repositories](#klonen-des-repositories)
     - [Anwenden der Beispielanwendungen über die Befehlszeile](#anwenden-der-beispielanwendungen-über-die-befehlszeile)
     - [Anwenden der Beispielanwendungen über das Minikube-Dashboard](#anwenden-der-beispielanwendungen-über-das-minikube-dashboard)
@@ -66,8 +67,19 @@ minikube dashboard
 
 Das Minikube-Dashboard zeigt Ihnen eine Übersicht über den Status Ihres Kubernetes-Clusters und ermöglicht es Ihnen, verschiedene Aktionen wie das Erstellen von Pods, Deployments und Services durchzuführen.
 
+## Sicherheit
+Kubernetes ist ein mächtiges Werkzeug zur Verwaltung von Containern, aber es ist auch wichtig, die Sicherheit zu berücksichtigen. In diesem Projekt haben wir die folgenden Sicherheitsmaßnahmen getroffen:
+- Verwendung von Namespaces zur Isolierung von Anwendungen
+- Verwendung von ConfigMaps und Secrets zur Speicherung von sensiblen Informationen
 
-## Herunterladen der Beispielanwendungen
+Falls Sie also andere Datenbank Psswörter oder der gleichen verwenden möchten, können Sie diese in den bestehenden Manifesten anpassen.
+**Wichtig:** Die Werte, welche im Secret definiert werden, müssen Base64 kodiert sein. Was Sie mit dem folgenden Command in Ihrem Terminal erreichen können:
+```bash
+echo -n 'IhrPasswort' | base64
+```
+
+
+## Herunterladen und Starten der Beispielanwendungen
 Die Beispielanwendunen können aus diesem Repository heruntergeladen werden. Dazu können Sie das Repository klonen oder die einzelnen Dateien herunterladen. Die Beispielanwendungen sind in YAML-Dateien definiert, die Sie mit Kubectl auf Ihrem Kubernetes-Cluster anwenden können.
 Für die Verwendung können Sie auch das Minikube-Dashboard verwenden, um die Beispielanwendungen zu erstellen und zu verwalten.
 
