@@ -34,7 +34,6 @@ Die Infrastruktur unseres Systems umfasst folgende Komponenten:
 
 Das folgende Diagramm visualisiert die Verbindungen:
 
-*(Diagramm sollte in draw.io erstellt und hier eingebunden werden)*
 
 ## Konfiguration
 
@@ -59,7 +58,7 @@ data:
 apiVersion: v1
 kind: Service
 metadata:
-  name: wordpress mysql
+  name: wordpress-mysql-svc
   labels:
     app: wordpress
   namespace: wordpress
@@ -96,7 +95,7 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: wordpress-mysql
+  name: wordpress-mysql-deployment
   labels:
     app: wordpress
   namespace: wordpress
@@ -142,7 +141,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: wordpress
+  name: wordpress-svc
   labels:
     app: wordpress
   namespace: wordpress
@@ -161,7 +160,7 @@ spec:
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: wp-pv-claim
+  name: wordpress-pv-claim
   labels:
     app: wordpress
   namespace: wordpress
@@ -179,7 +178,7 @@ spec:
 apiVersion: apps/v1 
 kind: Deployment
 metadata:
-  name: wordpress
+  name: wordpress-deployment
   labels:
     app: wordpress
   namespace: wordpress
@@ -201,7 +200,7 @@ spec:
         name: wordpress
         env:
         - name: WORDPRESS_DB_HOST
-          value: wordpress-mysql
+          value: wordpress-mysql-svc
         - name: WORDPRESS_DB_PASSWORD
           valueFrom:
             secretKeyRef:
@@ -216,7 +215,7 @@ spec:
       volumes:
       - name: wordpress-persistent-storage
         persistentVolumeClaim:
-          claimName: wp-pv-claim
+          claimName: wordpress-pv-claim
 ```
 
 ## Testplan
