@@ -14,12 +14,14 @@
 ## Einleitung
 
 **Was ist WordPress:**
-WordPress ist ein freies Content Management System (CMS), das zur Erstellung und Verwaltung von Websites verwendet wird. Es ist in PHP geschrieben und nutzt eine MySQL Datenbank zur Speicherung von Inhalten.
+WordPress ist ein freies Content Management System (CMS), das zur Erstellung und Verwaltung von Websites verwendet wird.Es nutzt eine MySQL Datenbank zur Speicherung von Inhalten. Dieses Projekt beschreibt die Installation, Konfiguration und Tests eines Wordpress Systems auf einem Kubernetes Cluster.
 
 ## Anforderungen
 
 - Einen Service, der eine MySQL Datenbank bereitstellt.
 - Einen Service, der WordPress bereitstellt.
+- Installation Hands-off: Das System soll weitgehend automatisch konfiguriert und installiert werden können. 
+- Komponenten: Bereitstellung von Wordpress und einer MySQL Datenbank.
 
 ## Infrastruktur
 
@@ -219,21 +221,26 @@ spec:
           claimName: wordpress-pv-claim
 ```
 
-## Testplan
+# Testplan
 
-### Testfälle
+## Testfälle
 
-| **Testfall**         | **Beschreibung**                              | **Erwartetes Ergebnis**            |
-|----------------------|----------------------------------------------|------------------------------------|
-| WordPress erreichbar | Zugriff auf die Startseite von WordPress     | WordPress Startseite wird geladen |
-| Datenbankverbindung  | Verbindung zur MySQL Datenbank herstellen    | Verbindung erfolgreich            |
+| **Testfall Nr.** | **Beschreibung**                    | **Testschritte**                                                                                       | **Erwartetes Ergebnis**                  |
+|-------------------|-------------------------------------|--------------------------------------------------------------------------------------------------------|------------------------------------------|
+| 1                 | WordPress ist über den Browser erreichbar | 1. Starte den Kubernetes-Cluster. 2. Wende die Konfiguration mit kubectl apply an. <br> 2. Rufe die URL `http://<Server-IP>:<Port>` im Browser auf.               | WordPress Startseite wird geladen        |
+| 2                 | Neues Benutzerkonto erstellen      | 1. Melde dich im WordPress-Admin-Dashboard an. <br> 2. Gehe zu "Benutzer" > "Neu hinzufügen". <br> 3. Fülle die Felder aus und speichere. | Benutzerkonto wird erstellt             |
+| 3                 | Blogbeitrag erstellen              | 1. Melde dich im WordPress-Admin-Dashboard an. <br> 2. Gehe zu "Beiträge" > "Erstellen". <br> 3. Fülle die Felder aus und veröffentliche den Beitrag. | Blogbeitrag wird korrekt veröffentlicht |
+| 4                 | Plugin installieren                | 1. Melde dich im WordPress-Admin-Dashboard an. <br> 2. Gehe zu "Plugins" > "Installieren". <br> 3. Suche ein Plugin und installiere es. | Plugin wird erfolgreich installiert     |
 
-### Ergebnisse
+## Testprotokoll
 
-| **Testfall**         | **Status**     |
-|----------------------|----------------|
-| WordPress erreichbar | Erfolgreich    |
-| Datenbankverbindung  | Erfolgreich    |
+| **Testfall Nr.** | **Beschreibung**                    | **Testschritte**                                                                                       | **Erwartetes Ergebnis**                  | **Erhaltenes Ergebnis**                  | **Status**     |
+|-------------------|-------------------------------------|--------------------------------------------------------------------------------------------------------|------------------------------------------|------------------------------------------|----------------|
+| 1                 | WordPress ist über den Browser erreichbar | 1. Starte den Kubernetes-Cluster. 2. Wende die Konfiguration mit kubectl apply an. <br> 3. Rufe die URL `http://<Server-IP>:<Port>` im Browser auf.               | WordPress Startseite wird geladen        | WordPress Startseite wurde geladen       | Erfolgreich    |
+| 2                 | Neues Benutzerkonto erstellen      | 1. Melde dich im WordPress-Admin-Dashboard an. <br> 2. Gehe zu "Benutzer" > "Neu hinzufügen". <br> 3. Fülle die Felder aus und speichere. | Benutzerkonto wird erstellt             | Benutzerkonto wurde erfolgreich erstellt | Erfolgreich    |
+| 3                 | Blogbeitrag erstellen              | 1. Melde dich im WordPress-Admin-Dashboard an. <br> 2. Gehe zu "Beiträge" > "Erstellen". <br> 3. Fülle die Felder aus und veröffentliche den Beitrag. | Blogbeitrag wird korrekt veröffentlicht | Blogbeitrag wurde korrekt veröffentlicht | Erfolgreich    |
+| 4                 | Plugin installieren                | 1. Melde dich im WordPress-Admin-Dashboard an. <br> 2. Gehe zu "Plugins" > "Installieren". <br> 3. Suche ein Plugin und installiere es. | Plugin wird erfolgreich installiert     | Plugin wurde erfolgreich installiert     | Erfolgreich    |
+
 
 ## Installationsanleitung
 
