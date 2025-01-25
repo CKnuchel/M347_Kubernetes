@@ -23,22 +23,6 @@ spec:
 
 ---
 
-# PersistentVolumeClaim für MediaWiki-Daten
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: mediawiki-pv-claim
-  namespace: mediawiki
-spec:
-  resources:
-    requests:
-      storage: 5Gi
-  storageClassName: manual
-  accessModes:
-    - ReadWriteOnce
-
----
-
 # PersistentVolume für SQL-Daten
 apiVersion: v1
 kind: PersistentVolume
@@ -53,6 +37,22 @@ spec:
   storageClassName: manual
   hostPath:
     path: /tmp/mediawiki-sql
+
+---
+
+# PersistentVolumeClaim für MediaWiki-Daten
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mediawiki-pv-claim
+  namespace: mediawiki
+spec:
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
 
 ---
 
@@ -80,6 +80,7 @@ metadata:
   namespace: mediawiki
 data:
   MYSQL_DATABASE: wikidatabase
+  MYSQL_USER: mediawiki
 
 ---
 
@@ -91,27 +92,8 @@ metadata:
   namespace: mediawiki
 type: Opaque
 data:
-  # Secrets müüsen base64 kodiert werden | echo -n 'Passw0rd' | base64
   MYSQL_ROOT_PASSWORD: UGFzc3cwcmQ= #Passw0rd
-
----
-
-# MySQL-Service
-apiVersion: v1
-kind: Service
-metadata:
-  labels:
-    service: mediawiki-mysql
-  name: mediawiki-mysql
-  namespace: mediawiki
-spec:
-  ports:
-    - name: "33060"
-      port: 33060
-      targetPort: 3306
-  selector:
-    service: mediawiki-mysql
-  type: ClusterIP
+  MYSQL_USER_PASSWORD: UGFzc3cwcmQ= #Passw0rd
 
 ---
 
@@ -119,27 +101,21 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  labels:
-    service: mediawiki-mysql
   name: mediawiki-mysql
   namespace: mediawiki
 spec:
   replicas: 1
   selector:
     matchLabels:
-      service: mediawiki-mysql
-  strategy:
-    type: Recreate
+      app: mediawiki-mysql
   template:
     metadata:
       labels:
-        network/wikinetwork: "true"
-        service: mediawiki-mysql
+        app: mediawiki-mysql
     spec:
       containers:
         - name: mediawiki-mysql
           image: mysql:8.0
-          imagePullPolicy: Always
           resources:
             limits:
               memory: "1Gi"
@@ -157,27 +133,16 @@ spec:
                 secretKeyRef:
                   key: MYSQL_ROOT_PASSWORD
                   name: mediawiki-mysql-secret
-      restartPolicy: Always
-
----
-
-# MediaWiki-Service
-apiVersion: v1
-kind: Service
-metadata:
-  labels:
-    service: mediawiki
-  name: mediawiki-service
-  namespace: mediawiki
-spec:
-  type: NodePort # Richtiges Feld für NodePort
-  ports:
-    - name: "8000"
-      port: 8000
-      targetPort: 80
-  selector:
-    service: mediawiki
-
+            - name: MYSQL_USER
+              valueFrom:
+                configMapKeyRef:
+                  key: MYSQL_USER
+                  name: mediawiki-env
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: MYSQL_USER_PASSWORD
+                  name: mediawiki-mysql-secret
 
 ---
 
@@ -185,25 +150,21 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  labels:
-    service: mediawiki
   name: mediawiki-deployment
   namespace: mediawiki
 spec:
   replicas: 1
   selector:
     matchLabels:
-      service: mediawiki
+      app: mediawiki
   template:
     metadata:
       labels:
-        network/wikinetwork: "true"
-        service: mediawiki
+        app: mediawiki
     spec:
       containers:
         - name: mediawiki
           image: mediawiki:latest
-          imagePullPolicy: Always
           ports:
             - containerPort: 80
           resources:
@@ -212,35 +173,76 @@ spec:
               cpu: "500m"
           env:
             - name: MEDIAWIKI_DB_HOST
-              value: mediawiki-mysql
+              value: mediawiki-mysql-svc
             - name: MEDIAWIKI_DB_NAME
               valueFrom:
                 configMapKeyRef:
                   key: MYSQL_DATABASE
                   name: mediawiki-env
             - name: MEDIAWIKI_DB_USER
-              value: root
+              valueFrom:
+                configMapKeyRef:
+                  key: MYSQL_USER
+                  name: mediawiki-env
             - name: MEDIAWIKI_DB_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  key: MYSQL_ROOT_PASSWORD
+                  key: MYSQL_USER_PASSWORD
                   name: mediawiki-mysql-secret
-      restartPolicy: Always
 
 ---
 
-# Netzwerkpolicy, damit die beiden Pods miteinander kommunizieren können
+# MySQL-Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: mediawiki-mysql-svc
+  namespace: mediawiki
+spec:
+  ports:
+    - name: "3306"
+      port: 3306
+      targetPort: 3306
+  selector:
+    app: mediawiki-mysql
+  type: ClusterIP
+
+---
+
+# MediaWiki-Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: mediawiki-svc
+  namespace: mediawiki
+spec:
+  type: NodePort
+  ports:
+    - name: "8000"
+      port: 8000
+      targetPort: 80
+  selector:
+    app: mediawiki
+
+---
+
+# Netzwerkpolicy für eingeschränkten Datenverkehr zwischen MediaWiki und MySQL
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: wikinetwork
+  name: allow-mediawiki-mysql
   namespace: mediawiki
 spec:
   podSelector:
     matchLabels:
-      network/wikinetwork: "true"
+      app: mediawiki
+  policyTypes:
+    - Ingress
   ingress:
     - from:
         - podSelector:
             matchLabels:
-              network/wikinetwork: "true"
+              app: mediawiki-mysql
+      ports:
+        - protocol: TCP
+          port: 3306
