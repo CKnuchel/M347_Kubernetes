@@ -80,6 +80,7 @@ metadata:
   namespace: mediawiki
 data:
   MYSQL_DATABASE: wikidatabase
+  MYSQL_USER: mediawiki
 
 ---
 
@@ -91,8 +92,8 @@ metadata:
   namespace: mediawiki
 type: Opaque
 data:
-  # Secrets müüsen base64 kodiert werden | echo -n 'Passw0rd' | base64
   MYSQL_ROOT_PASSWORD: UGFzc3cwcmQ= #Passw0rd
+  MYSQL_USER_PASSWORD: UGFzc3cwcmQ= #Passw0rd
 
 ---
 
@@ -100,17 +101,15 @@ data:
 apiVersion: v1
 kind: Service
 metadata:
-  labels:
-    service: mediawiki-mysql
   name: mediawiki-mysql-svc
   namespace: mediawiki
 spec:
   ports:
-    - name: "33060"
-      port: 33060
+    - name: "3306"
+      port: 3306
       targetPort: 3306
   selector:
-    service: mediawiki-mysql
+    app: mediawiki-mysql
   type: ClusterIP
 
 ---
@@ -119,27 +118,21 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  labels:
-    service: mediawiki-mysql
   name: mediawiki-mysql
   namespace: mediawiki
 spec:
   replicas: 1
   selector:
     matchLabels:
-      service: mediawiki-mysql
-  strategy:
-    type: Recreate
+      app: mediawiki-mysql
   template:
     metadata:
       labels:
-        network/wikinetwork: "true"
-        service: mediawiki-mysql
+        app: mediawiki-mysql
     spec:
       containers:
         - name: mediawiki-mysql
           image: mysql:8.0
-          imagePullPolicy: Always
           resources:
             limits:
               memory: "1Gi"
@@ -157,7 +150,16 @@ spec:
                 secretKeyRef:
                   key: MYSQL_ROOT_PASSWORD
                   name: mediawiki-mysql-secret
-      restartPolicy: Always
+            - name: MYSQL_USER
+              valueFrom:
+                configMapKeyRef:
+                  key: MYSQL_USER
+                  name: mediawiki-env
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: MYSQL_USER_PASSWORD
+                  name: mediawiki-mysql-secret
 
 ---
 
@@ -165,8 +167,6 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  labels:
-    service: mediawiki
   name: mediawiki-svc
   namespace: mediawiki
 spec:
@@ -176,8 +176,7 @@ spec:
       port: 8000
       targetPort: 80
   selector:
-    service: mediawiki
-
+    app: mediawiki
 
 ---
 
@@ -185,25 +184,21 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  labels:
-    service: mediawiki
   name: mediawiki-deployment
   namespace: mediawiki
 spec:
   replicas: 1
   selector:
     matchLabels:
-      service: mediawiki
+      app: mediawiki
   template:
     metadata:
       labels:
-        network/wikinetwork: "true"
-        service: mediawiki
+        app: mediawiki
     spec:
       containers:
         - name: mediawiki
           image: mediawiki:latest
-          imagePullPolicy: Always
           ports:
             - containerPort: 80
           resources:
@@ -212,35 +207,42 @@ spec:
               cpu: "500m"
           env:
             - name: MEDIAWIKI_DB_HOST
-              value: mediawiki-mysql
+              value: mediawiki-mysql-svc
             - name: MEDIAWIKI_DB_NAME
               valueFrom:
                 configMapKeyRef:
                   key: MYSQL_DATABASE
                   name: mediawiki-env
             - name: MEDIAWIKI_DB_USER
-              value: root
+              valueFrom:
+                configMapKeyRef:
+                  key: MYSQL_USER
+                  name: mediawiki-env
             - name: MEDIAWIKI_DB_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  key: MYSQL_ROOT_PASSWORD
+                  key: MYSQL_USER_PASSWORD
                   name: mediawiki-mysql-secret
-      restartPolicy: Always
 
 ---
 
-# Netzwerkpolicy, damit die beiden Pods miteinander kommunizieren können
+# Netzwerkpolicy für eingeschränkten Datenverkehr zwischen MediaWiki und MySQL
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: wikinetwork
+  name: allow-mediawiki-mysql
   namespace: mediawiki
 spec:
   podSelector:
     matchLabels:
-      network/wikinetwork: "true"
+      app: mediawiki
+  policyTypes:
+    - Ingress
   ingress:
     - from:
         - podSelector:
             matchLabels:
-              network/wikinetwork: "true"
+              app: mediawiki-mysql
+      ports:
+        - protocol: TCP
+          port: 3306
