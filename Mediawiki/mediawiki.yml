@@ -102,7 +102,7 @@ kind: Service
 metadata:
   labels:
     service: mediawiki-mysql
-  name: mediawiki-mysql
+  name: mediawiki-mysql-svc
   namespace: mediawiki
 spec:
   ports:
@@ -167,7 +167,7 @@ kind: Service
 metadata:
   labels:
     service: mediawiki
-  name: mediawiki-service
+  name: mediawiki-svc
   namespace: mediawiki
 spec:
   type: NodePort
