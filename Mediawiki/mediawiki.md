@@ -366,6 +366,18 @@ spec:
 5. **Wiki erstellen:**
     - Erstellen Sie ein neues Wiki in dem Sie dem Assistenten folgen.
 
+6. **LocalSettings.php übernehmen:**
+    - Am Ende des Installation Prozesses, wo Sie die `LocalSettings.php` Datei erhalten, laden Sie diese herunter und speichern Sie diese im Verzeichnis des MediaWiki.
+    - Führen Sie folgenden Befehl aus, um die Datei in das Volume zu kopieren:
+    ```bash
+    kubectl -n mediawiki cp LocalSettings.php mediawiki-deployment-<ID>:/var/www/html/LocalSettings.php
+    ```
+    - Ersetzen Sie `<ID>` durch die ID des MediaWiki Pods. Welche Sie mit `kubectl get pods -n mediawiki` ermitteln können.
+
+    - Starten Sie den MediaWiki Pod neu, um die Änderungen zu übernehmen:
+    ```bash
+    kubectl delete pod mediawiki-deployment-<ID> -n mediawiki
+    ```
 ---
 
 ## Hilfestellungen
