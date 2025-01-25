@@ -38,13 +38,13 @@ Dieses Projekt stellt eine Dokumentation für die Verwendung von Kubernetes bere
 ## Installation der benötigten Software
 
 ### Docker
-Kubernetes verwendet im Hintergrund eine Virtualisierungssoftware, um Container zu erstellen und zu verwalten. Die bekannteste Software für die Virtualisierung von Containern ist Docker. Aus haben wir uns persönlich für die Verwendung von Docker entschieden. Die Installation von Docker erfolgt über die offizielle [Docker-Dokumentation](https://docs.docker.com/get-docker/). Hier wird die Installation für verschiedene Betriebssysteme beschrieben.
+Kubernetes verwendet im Hintergrund eine Virtualisierungssoftware, um Container zu erstellen und zu verwalten. Die bekannteste Software für die Virtualisierung von Containern ist Docker. Aus haben wir uns persönlich für die Verwendung von Docker entschieden. Für die Installation, verwenden Sie die offiziele Dokumentation [Docker-Dokumentation](https://docs.docker.com/get-docker/). Hier wird die Installation für verschiedene Betriebssysteme beschrieben.
 
 ### Minikube
-Minikube ist ein Tool, das es ermöglicht, ein Kubernetes-Cluster auf einem einzelnen Computer zu erstellen. Die Installation von Minikube erfolgt über die offizielle [Minikube-Dokumentation](https://minikube.sigs.k8s.io/docs/start/).
+Minikube ist ein Tool, das es ermöglicht, ein Kubernetes-Cluster auf einem einzelnen Computer zu erstellen. Für die Installation, verwenden Sie die offiziele Dokumentation [Minikube-Dokumentation](https://minikube.sigs.k8s.io/docs/start/).
 
 ### Kubectl
-Kubectl ist ein Befehlszeilentool, das es ermöglicht, mit einem Kubernetes-Cluster zu interagieren. Die Installation von Kubectl erfolgt über die offizielle [Kubectl-Dokumentation](https://kubernetes.io/docs/tasks/tools/install-kubectl/).
+Kubectl ist ein Befehlszeilentool, das es ermöglicht, mit einem Kubernetes-Cluster zu interagieren. Für die Installation, verwenden Sie die offiziele Dokumentation [Kubectl-Dokumentation](https://kubernetes.io/docs/tasks/tools/install-kubectl/).
 
 
 ## Vorbereitungen für die Verwendung von Kubernetes
