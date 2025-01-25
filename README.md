@@ -98,9 +98,9 @@ Die Ausgabe der Services zeigt Ihnen die IP-Adresse und den Port, unter dem Sie 
 Alle Anwendungen müssen im Anschluss in dem Webbrowser konfiguriert werden. Hierzu müssen Sie die IP-Adresse und den Port des Services in die Adresszeile des Browsers eingeben. Die Konfiguration der Anwendungen erfolgt über ein Webinterface, das Ihnen Schritt für Schritt durch die Konfiguration führt.
 
 Die Dokumentation für die Konfiguration der Beispielanwendungen finden Sie hier:
-- [MediaWiki](./Mediawiki/mediawiki.md#installationsanleitung)
-- [Jira](./Jira/jira.md#installationsanleitung)
-- [Wordpress](./Wordpress/wordpress.md#installationsanleitung)
+- [MediaWiki](./Mediawiki/README.md#installationsanleitung)
+- [Jira](./Jira/README.md#installationsanleitung)
+- [Wordpress](./Wordpress/README.md#installationsanleitung)
 
 ## Designentscheidungen
 In diesem Projekt haben wir uns für die Verwendung von Docker, Minikube und Kubectl entschieden, da diese Tools weit verbreitet und gut dokumentiert sind. Wir haben uns auch für die Verwendung von YAML-Dateien zur Definition der Beispielanwendungen entschieden, da YAML eine einfache und lesbare Sprache ist, die es ermöglicht, komplexe Konfigurationen zu definieren.
