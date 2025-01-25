@@ -63,6 +63,8 @@ metadata:
   namespace: jira
 data:
   JIRA_HOME: /var/atlassian/application-data/jira
+  POSTGRES_DB: jira
+  POSTGRES_USER: jira
 
 ---
 apiVersion: v1
@@ -151,9 +153,15 @@ spec:
             - containerPort: 5432
           env:
             - name: POSTGRES_DB
-              value: jira
+              valueFrom:
+                configMapKeyRef:
+                  name: jira-config
+                  key: POSTGRES_DB
             - name: POSTGRES_USER
-              value: jira
+              valueFrom:
+                configMapKeyRef:
+                  name: jira-config
+                  key: POSTGRES_USER
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
