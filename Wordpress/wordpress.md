@@ -251,11 +251,6 @@ spec:
   3. Ausführen von "kubectl apply -f ./" 
   4. Korrekte IP Adresse ermitteln " minikube service wordpress --url -n wordpress" 
   5. Navigieren zur IP Adresse des LoadBalancer Services.
-  6. Eingabe der Datenbankinformationen:
-      - Datenbank Host: wordpress-mysql
-      - Benutzer: root
-      - Passwort: (wie im Secret definiert)
-
 
 ## Hilfestellungen
 
