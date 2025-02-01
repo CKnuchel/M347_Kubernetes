@@ -30,9 +30,11 @@ Dieses Projekt stellt eine Dokumentation für die Verwendung von Kubernetes bere
     - [Anwenden der Beispielanwendungen über das Minikube-Dashboard](#anwenden-der-beispielanwendungen-über-das-minikube-dashboard)
     - [Öffnen der Beispielanwendungen](#öffnen-der-beispielanwendungen)
     - [Konfiguration der Beispielanwendungen](#konfiguration-der-beispielanwendungen)
+  - [Detailierte Dokumentationen der Beispielanwendungen](#detailierte-dokumentationen-der-beispielanwendungen)
   - [Designentscheidungen](#designentscheidungen)
     - [Namespace](#namespace)
   - [Fazit](#fazit)
+  - [Generelle Hilfen welche verwendet wurden](#generelle-hilfen-welche-verwendet-wurden)
 
 
 ## Installation der benötigten Software
@@ -114,6 +116,11 @@ Die Dokumentation für die Konfiguration der Beispielanwendungen finden Sie hier
 - [Jira](./Jira/README.md#installationsanleitung)
 - [Wordpress](./Wordpress/README.md#installationsanleitung)
 
+## Detailierte Dokumentationen der Beispielanwendungen
+- [MediaWiki](./Mediawiki/README.md)
+- [Jira](./Jira/README.md)
+- [Wordpress](./Wordpress/README.md)
+
 ## Designentscheidungen
 In diesem Projekt haben wir uns für die Verwendung von Docker, Minikube und Kubectl entschieden, da diese Tools weit verbreitet und gut dokumentiert sind. Wir haben uns auch für die Verwendung von YAML-Dateien zur Definition der Beispielanwendungen entschieden, da YAML eine einfache und lesbare Sprache ist, die es ermöglicht, komplexe Konfigurationen zu definieren.
 
@@ -130,3 +137,11 @@ Die Anzeige im Minikube-Dashboard wird dadurch übersichtlicher und wir können 
 In diesem Projekt haben wir die Installation, Konfiguration und Verwendung von Kubernetes dokumentiert. Wir haben die Beispielanwendungen MediaWiki, Jira und WordPress auf einem Kubernetes-Cluster erstellt und konfiguriert. Wir haben die Designentscheidungen erläutert, die wir bei der Erstellung der Beispielanwendungen getroffen haben, und die Vorteile der Verwendung von Docker, Minikube und Kubectl hervorgehoben.
 
 Durch dieses Projekt konnten wir die Verwendung von Kubernetes besser verstehen und die Vorteile von Containervirtualisierung und Orchestrierung von Containern kennenlernen. Wir haben gelernt, wie Kubernetes verwendet werden kann, um Anwendungen auf einem Cluster von Containern zu erstellen und zu verwalten, und wie es uns ermöglicht, Anwendungen skalierbar und zuverlässig bereitzustellen.
+
+## Generelle Hilfen welche verwendet wurden
+- [Offiziele Kubernetes Dokumentation](https://kubernetes.io/docs/home/)
+- [Kubernestes Stateful Application](https://kubernetes.io/docs/tutorials/stateful-application/)
+- [Kubernetes Guide für Wordpress](https://kubernetes.io/docs/tutorials/stateful-application/mysql-wordpress-persistent-volume/)
+- [Docker Hub - MediaWiki](https://hub.docker.com/_/mediawiki)
+- [Docker Hub - Jira](https://hub.docker.com/r/atlassian/jira-software)
+- [Docker Hub - Wordpress](https://hub.docker.com/_/wordpress)
