@@ -108,6 +108,13 @@ Die Ausgabe der Services zeigt Ihnen die IP-Adresse und den Port, unter dem Sie 
 
 ![Minikube Services](./Assets/Minikube_Service_List.png)
 
+**Wichtig:** Auf einem Windows-Computer kann es sein, dass die IP-Adresse nicht direkt in der Servicelist angezeigt werden. In diesem Fall kann von Minikube der Service direkt geöffnet werden. Dazu können Sie den folgenden Befehl verwenden:
+```bash
+minikube service <Servicename> --url -n <Namespace>
+```
+
+Hierbei wird von Minikube ein Tunnel aufgebaut, welcher die IP-Adresse und den Port des Services anzeigt. Diesen können Sie dann in Ihrem Webbrowser eingeben, um auf die Beispielanwendung zuzugreifen.
+
 ### Konfiguration der Beispielanwendungen
 Alle Anwendungen müssen im Anschluss in dem Webbrowser konfiguriert werden. Hierzu müssen Sie die IP-Adresse und den Port des Services in die Adresszeile des Browsers eingeben. Die Konfiguration der Anwendungen erfolgt über ein Webinterface, das Ihnen Schritt für Schritt durch die Konfiguration führt.
 
